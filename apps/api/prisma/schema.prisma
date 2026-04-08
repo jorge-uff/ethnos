@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  players Player[]
+}
+
+model Game {
+  id           String     @id @default(uuid())
+  name         String     @default("")
+  status       GameStatus @default(WAITING)
+  age          Int        @default(1)
+  activeTribes String[]   // TribeName[]
+  deckState    Json       // serialized deck (server only)
+  marketState  Json       // face-up cards
+  kingdomState Json       // kingdoms with glory tokens and control markers
+  giantToken   Json?      // IGiantToken | null
+  dragonsRevealed Int     @default(0)
+  totalAges    Int        @default(3)
+  activePlayerId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  players Player[]
+}
+
+model Player {
+  id             String      @id @default(uuid())
+  color          PlayerColor
+  glory          Int         @default(0)
+  handState      Json        // ICard[]
+  bandsState     Json        // IBand[]
+  orcHorde       Json        @default("{}")
+  merfolkPosition Int        @default(0)
+  trollTokens    Int[]
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  gameId String
+  game   Game   @relation(fields: [gameId], references: [id])
+
+  @@unique([gameId, userId])
+  @@unique([gameId, color])
+}
+
+enum GameStatus {
+  WAITING
+  IN_PROGRESS
+  FINISHED
+}
+
+enum PlayerColor {
+  WHITE
+  BLACK
+  BLUE
+  YELLOW
+  GREEN
+  PURPLE
+}

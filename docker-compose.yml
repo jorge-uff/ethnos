@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ethnos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ethnos
+      POSTGRES_PASSWORD: ethnos
+      POSTGRES_DB: ethnos
+    ports:
+      - "5433:5432"
+    volumes:
+      - ethnos_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ethnos"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  ethnos_pg_data:
