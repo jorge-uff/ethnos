@@ -35,6 +35,8 @@ interface Player {
   username: string
   color: string
   glory: number
+  gloryFromKingdoms: number
+  gloryFromBands: number
   hand: Card[]
   bands: Band[]
 }
@@ -275,6 +277,34 @@ function WaitingRoom({ game, isCreator, onStart }: {
   )
 }
 
+// ─── Glory breakdown ───────────────────────────────────────────────────────────
+
+function gloryKingdoms(p: Player): number {
+  return p.gloryFromKingdoms ?? 0
+}
+
+function gloryBands(p: Player): number {
+  return p.gloryFromBands ?? 0
+}
+
+function PlayerGlorySplit({ player, size = 'md' }: { player: Player; size?: 'sm' | 'md' }) {
+  const k = gloryKingdoms(player)
+  const b = gloryBands(player)
+  const t = player.glory
+  const textMain = size === 'md' ? 'text-sm' : 'text-xs'
+  const textTotal = size === 'md' ? 'text-lg' : 'text-sm'
+  return (
+    <div className={`text-right ${textMain} text-gray-400 leading-tight`}>
+      <div>
+        Reinos <span className="text-amber-200/90 tabular-nums">{k}</span>
+        <span className="mx-1.5 text-gray-600">·</span>
+        Bandos <span className="text-amber-200/90 tabular-nums">{b}</span>
+      </div>
+      <div className={`text-yellow-400 font-bold tabular-nums ${textTotal}`}>{t} ✨</div>
+    </div>
+  )
+}
+
 // ─── Finished screen ──────────────────────────────────────────────────────────
 
 function FinishedScreen({ game }: { game: GameState }) {
@@ -285,15 +315,15 @@ function FinishedScreen({ game }: { game: GameState }) {
       <div className="bg-gray-900 rounded-xl p-6 w-full max-w-md">
         <ul className="flex flex-col gap-4">
           {sorted.map((p, i) => (
-            <li key={p.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="w-7 h-7 rounded-full bg-indigo-700 flex items-center justify-center text-sm font-bold">
+            <li key={p.id} className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="w-7 h-7 shrink-0 rounded-full bg-indigo-700 flex items-center justify-center text-sm font-bold">
                   {i + 1}
                 </span>
-                <span className="font-medium">{p.username}</span>
-                {i === 0 && <span className="text-xs text-yellow-400">Winner</span>}
+                <span className="font-medium truncate">{p.username}</span>
+                {i === 0 && <span className="text-xs text-yellow-400 shrink-0">Winner</span>}
               </div>
-              <span className="text-yellow-400 font-bold text-lg">{p.glory} ✨</span>
+              <PlayerGlorySplit player={p} size="md" />
             </li>
           ))}
         </ul>
@@ -468,7 +498,7 @@ function GameBoard({
                 <span className={`font-semibold ${isMe ? 'text-indigo-300' : 'text-white'}`}>
                   {p.username} {isMe && '(you)'}
                 </span>
-                <span className="text-yellow-400 font-bold">{p.glory} ✨</span>
+                <PlayerGlorySplit player={p} size="sm" />
               </div>
 
               {isMe ? (

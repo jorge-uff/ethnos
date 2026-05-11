@@ -41,6 +41,8 @@ model Player {
   id             String      @id @default(uuid())
   color          PlayerColor
   glory          Int         @default(0)
+  gloryFromKingdoms Int      @default(0)
+  gloryFromBands    Int      @default(0)
   handState      Json        // ICard[]
   bandsState     Json        // IBand[]
   orcHorde       Json        @default("{}")
