@@ -55,6 +55,8 @@ function endAge(state: FullGameState): FullGameState {
 // ─── Individual actions ───────────────────────────────────────────────────────
 
 function recruitFromDeck(state: FullGameState, playerId: string): ActionResult {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return { state, error: 'Player not found' }
   if (state.deck.length === 0) return { state, error: 'Deck is empty' }
 
   const [card, ...deck] = state.deck
@@ -66,6 +68,8 @@ function recruitFromDeck(state: FullGameState, playerId: string): ActionResult {
     return { state: { ...next, activePlayerId: nextActivePlayer(next) } }
   }
 
+  if (player.hand.length >= 10) return { state, error: 'Hand is full (max 10 cards)' }
+
   const players = next.players.map(p =>
     p.id === playerId ? { ...p, hand: [...p.hand, card] } : p
   )
@@ -73,8 +77,12 @@ function recruitFromDeck(state: FullGameState, playerId: string): ActionResult {
 }
 
 function recruitFromMarket(state: FullGameState, playerId: string, cardId: number): ActionResult {
+  const player = state.players.find(p => p.id === playerId)
+  if (!player) return { state, error: 'Player not found' }
   const card = state.market.find(c => c.id === cardId)
   if (!card) return { state, error: 'Card not in market' }
+
+  if (player.hand.length >= 10) return { state, error: 'Hand is full (max 10 cards)' }
 
   const market = state.market.filter(c => c.id !== cardId)
   const players = state.players.map(p =>

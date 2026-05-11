@@ -81,19 +81,21 @@ function CardPill({
   small = false,
   selected = false,
   selectable = false,
+  disabled = false,
   onClick,
 }: {
   card: Card
   small?: boolean
   selected?: boolean
   selectable?: boolean
+  disabled?: boolean
   onClick?: () => void
 }) {
   if (card.type === 'DRAGON') {
     return (
       <div
         onClick={onClick}
-        className={`${small ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'} bg-red-900 border border-red-500 rounded-lg font-bold text-red-300 ${selectable ? 'cursor-pointer' : ''}`}
+        className={`${small ? 'px-2 py-1 text-xs' : 'px-3 py-1.5 text-sm'} bg-red-900 border border-red-500 rounded-lg font-bold text-red-300 ${selectable ? 'cursor-pointer' : ''} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
         Dragon
       </div>
@@ -108,6 +110,7 @@ function CardPill({
         ${bg} rounded-lg font-medium text-white shadow
         ${selectable ? 'cursor-pointer hover:opacity-80' : ''}
         ${selected ? 'ring-2 ring-white ring-offset-2 ring-offset-gray-900' : ''}
+        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
       `}
     >
       {card.tribe ? TRIBE_LABELS[card.tribe] : '?'}
@@ -322,6 +325,8 @@ function GameBoard({
   const activePlayer = game.players.find(p => p.id === game.activePlayerId)
   const selectedCards = (myPlayer?.hand ?? []).filter(c => selectedCardIds.has(c.id))
   const validBand = isValidBand(selectedCards)
+  const handFull = !!(myPlayer && myPlayer.hand.length >= 10)
+  const marketRecruitDisabled = busy || handFull
 
   async function send(action: object) {
     if (busy) return
@@ -367,11 +372,14 @@ function GameBoard({
           <span className="text-indigo-300 text-sm font-medium mr-2">Your turn:</span>
           <button
             onClick={() => send({ type: 'RECRUIT_FROM_DECK' })}
-            disabled={busy}
+            disabled={busy || handFull}
             className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 rounded-lg text-sm font-medium transition-colors"
           >
             Draw from deck
           </button>
+          {handFull && (
+            <span className="text-xs text-amber-300">Hand full</span>
+          )}
           {selectedCardIds.size > 0 && (
             <button
               onClick={() => validBand ? setShowBandModal(true) : null}
@@ -438,7 +446,8 @@ function GameBoard({
       {/* Market */}
       <div className="bg-gray-900 rounded-xl p-4">
         <p className="text-xs text-gray-500 uppercase tracking-widest mb-3">
-          Market ({game.market.length} cards){isMyTurn && ' — click to recruit'}
+          Market ({game.market.length} cards){isMyTurn && !handFull && ' — click to recruit'}
+          {isMyTurn && handFull && ' — hand full'}
         </p>
         <div className="flex flex-wrap gap-2">
           {game.market.length === 0
@@ -447,8 +456,9 @@ function GameBoard({
                 <CardPill
                   key={c.id}
                   card={c}
-                  selectable={isMyTurn && c.type !== 'DRAGON'}
-                  onClick={isMyTurn && c.type !== 'DRAGON' ? () => send({ type: 'RECRUIT_FROM_MARKET', cardId: c.id }) : undefined}
+                  selectable={isMyTurn && !marketRecruitDisabled && c.type !== 'DRAGON'}
+                  disabled={isMyTurn && marketRecruitDisabled && c.type !== 'DRAGON'}
+                  onClick={isMyTurn && !marketRecruitDisabled && c.type !== 'DRAGON' ? () => send({ type: 'RECRUIT_FROM_MARKET', cardId: c.id }) : undefined}
                 />
               ))
           }
@@ -474,7 +484,7 @@ function GameBoard({
               {isMe ? (
                 <div className="mb-3">
                   <p className="text-xs text-gray-500 mb-2">
-                    Hand ({p.hand.length}){isMyTurn ? ' — click to select for band' : ''}
+                    Hand ({p.hand.length}/10){isMyTurn ? ' — click to select for band' : ''}
                   </p>
                   <div className="flex flex-wrap gap-1">
                     {p.hand.length === 0

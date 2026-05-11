@@ -18,6 +18,7 @@ CREATE TABLE "User" (
 -- CreateTable
 CREATE TABLE "Game" (
     "id" TEXT NOT NULL,
+    "name" TEXT NOT NULL DEFAULT '',
     "status" "GameStatus" NOT NULL DEFAULT 'WAITING',
     "age" INTEGER NOT NULL DEFAULT 1,
     "activeTribes" TEXT[],
