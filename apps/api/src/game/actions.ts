@@ -19,7 +19,6 @@ function nextActivePlayer(state: FullGameState): string {
   return state.players[(idx + 1) % state.players.length].id
 }
 
-/** Glória por bando: número triangular n*(n+1)/2 (n = cartas no bando). */
 function triangularBandGlory(cardCount: number): number {
   return (cardCount * (cardCount + 1)) / 2
 }
