@@ -27,6 +27,8 @@ export async function loadGame(prisma: PrismaClient, gameId: string): Promise<Fu
       username: p.user.username,
       color: p.color,
       glory: p.glory,
+      gloryFromKingdoms: p.gloryFromKingdoms,
+      gloryFromBands: p.gloryFromBands,
       hand: p.handState as unknown as FullGameState['players'][0]['hand'],
       bands: p.bandsState as unknown as FullGameState['players'][0]['bands'],
     })),
@@ -53,6 +55,8 @@ export async function saveGame(prisma: PrismaClient, state: FullGameState): Prom
       where: { id: player.id },
       data: {
         glory: player.glory,
+        gloryFromKingdoms: player.gloryFromKingdoms,
+        gloryFromBands: player.gloryFromBands,
         handState: player.hand as unknown as Prisma.InputJsonValue,
         bandsState: player.bands as unknown as Prisma.InputJsonValue,
       },

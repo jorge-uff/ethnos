@@ -8,6 +8,8 @@ export interface IPlayer {
   username: string
   color: PlayerColor
   glory: number
+  gloryFromKingdoms: number
+  gloryFromBands: number
   hand: ICard[]
   bands: IBand[]          // bands played this age (face up in front of player)
   // Orc Horde board: color -> markers placed

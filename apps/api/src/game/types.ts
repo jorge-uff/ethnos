@@ -42,6 +42,8 @@ export interface PlayerState {
   username: string
   color: string
   glory: number
+  gloryFromKingdoms: number
+  gloryFromBands: number
   hand: Card[]
   bands: Band[]
 }

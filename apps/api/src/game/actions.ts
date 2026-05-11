@@ -19,6 +19,10 @@ function nextActivePlayer(state: FullGameState): string {
   return state.players[(idx + 1) % state.players.length].id
 }
 
+function triangularBandGlory(cardCount: number): number {
+  return (cardCount * (cardCount + 1)) / 2
+}
+
 // ─── Age scoring + transition ─────────────────────────────────────────────────
 
 function endAge(state: FullGameState): FullGameState {
@@ -29,14 +33,32 @@ function endAge(state: FullGameState): FullGameState {
     const maxMarkers = Math.max(0, ...players.map(p => kingdom.markers[p.id] ?? 0))
     if (maxMarkers === 0) continue
 
-    const glory = kingdom.tokens[ageKey]
+    const kingdomGlory = kingdom.tokens[ageKey]
     for (const p of players) {
       if ((kingdom.markers[p.id] ?? 0) === maxMarkers) {
         const idx = players.findIndex(x => x.id === p.id)
-        players[idx] = { ...players[idx], glory: players[idx].glory + glory }
+        const cur = players[idx]
+        players[idx] = {
+          ...cur,
+          glory: cur.glory + kingdomGlory,
+          gloryFromKingdoms: cur.gloryFromKingdoms + kingdomGlory,
+        }
       }
     }
   }
+
+  players = players.map(p => {
+    let bandGlory = 0
+    for (const band of p.bands) {
+      bandGlory += triangularBandGlory(band.cards.length)
+    }
+    if (bandGlory === 0) return p
+    return {
+      ...p,
+      glory: p.glory + bandGlory,
+      gloryFromBands: p.gloryFromBands + bandGlory,
+    }
+  })
 
   // Reset markers
   const kingdoms = state.kingdoms.map(k => ({
