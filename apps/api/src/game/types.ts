@@ -16,9 +16,9 @@ export interface Card {
 }
 
 export interface GloryTokens {
-  age1: number
-  age2: number
-  age3: number
+  age1: [number]
+  age2: [number, number]
+  age3: [number, number, number]
 }
 
 export interface Kingdom {

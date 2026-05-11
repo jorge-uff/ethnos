@@ -30,20 +30,32 @@ function endAge(state: FullGameState): FullGameState {
   let players = state.players.map(p => ({ ...p }))
 
   for (const kingdom of state.kingdoms) {
-    const maxMarkers = Math.max(0, ...players.map(p => kingdom.markers[p.id] ?? 0))
-    if (maxMarkers === 0) continue
+    const rewards = kingdom.tokens[ageKey] as number[]
 
-    const kingdomGlory = kingdom.tokens[ageKey]
-    for (const p of players) {
-      if ((kingdom.markers[p.id] ?? 0) === maxMarkers) {
+    // Sort players by marker count descending
+    const ranked = [...players].sort(
+      (a, b) => (kingdom.markers[b.id] ?? 0) - (kingdom.markers[a.id] ?? 0)
+    )
+
+    let posIdx = 0
+    while (posIdx < rewards.length) {
+      const markerCount = kingdom.markers[ranked[posIdx]?.id] ?? 0
+      if (markerCount === 0) break
+
+      // All players tied at this position share the same reward without splitting
+      const tied = ranked.filter(
+        (_, i) => i >= posIdx && (kingdom.markers[ranked[i].id] ?? 0) === markerCount
+      )
+      const reward = rewards[posIdx]
+      for (const p of tied) {
         const idx = players.findIndex(x => x.id === p.id)
-        const cur = players[idx]
         players[idx] = {
-          ...cur,
-          glory: cur.glory + kingdomGlory,
-          gloryFromKingdoms: cur.gloryFromKingdoms + kingdomGlory,
+          ...players[idx],
+          glory: players[idx].glory + reward,
+          gloryFromKingdoms: players[idx].gloryFromKingdoms + reward,
         }
       }
+      posIdx += tied.length
     }
   }
 

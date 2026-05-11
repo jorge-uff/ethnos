@@ -40,6 +40,8 @@ CREATE TABLE "Player" (
     "id" TEXT NOT NULL,
     "color" "PlayerColor" NOT NULL,
     "glory" INTEGER NOT NULL DEFAULT 0,
+    "gloryFromKingdoms" INTEGER NOT NULL DEFAULT 0,
+    "gloryFromBands" INTEGER NOT NULL DEFAULT 0,
     "handState" JSONB NOT NULL,
     "bandsState" JSONB NOT NULL,
     "orcHorde" JSONB NOT NULL DEFAULT '{}',

@@ -18,7 +18,7 @@ interface Card {
 interface Kingdom {
   name: string
   color: string
-  tokens: { age1: number; age2: number; age3: number }
+  tokens: { age1: [number]; age2: [number, number]; age3: [number, number, number] }
   markers: Record<string, number>
 }
 
@@ -455,8 +455,12 @@ function GameBoard({
                 <div className={`w-3 h-3 rounded-full ${CARD_BG[k.color]}`} />
                 <span className="text-sm font-medium">{KINGDOM_LABELS[k.color]}</span>
               </div>
-              <div className="text-xs text-gray-400 mb-2">
-                I:{k.tokens.age1} · II:{k.tokens.age2} · III:{k.tokens.age3}
+              <div className="text-xs text-gray-400 mb-2 leading-snug">
+                <span title="Era 1 — 1st place">I: {k.tokens.age1[0]}</span>
+                {' · '}
+                <span title="Era 2 — 1st/2nd place">II: {k.tokens.age2[0]}/{k.tokens.age2[1]}</span>
+                {' · '}
+                <span title="Era 3 — 1st/2nd/3rd place">III: {k.tokens.age3[0]}/{k.tokens.age3[1]}/{k.tokens.age3[2]}</span>
               </div>
               <div className="flex flex-col gap-1">
                 {game.players.map(p => (

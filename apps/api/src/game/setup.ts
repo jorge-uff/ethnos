@@ -82,14 +82,15 @@ export function setupKingdoms(players: PlayerState[]): Kingdom[] {
   const playerIds = players.map(p => p.id)
 
   return KINGDOMS.map((k, i) => {
-    const slice = shuffledTokens.slice(i * 3, i * 3 + 3).sort((a, b) => a - b)
+    // Sort descending: highest token = 1st place, middle = 2nd, lowest = 3rd
+    const [t1, t2, t3] = shuffledTokens.slice(i * 3, i * 3 + 3).sort((a, b) => b - a)
     const markers: Record<string, number> = {}
     for (const id of playerIds) markers[id] = 0
 
     return {
       name: k.name,
       color: k.color,
-      tokens: { age1: slice[0], age2: slice[1], age3: slice[2] },
+      tokens: { age1: [t1], age2: [t1, t2], age3: [t1, t2, t3] },
       markers,
     }
   })
