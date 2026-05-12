@@ -1,4 +1,4 @@
-import { Card, TribeName, KingdomColor, KingdomName, Kingdom, FullGameState, PlayerState, ClientGameState } from './types.js'
+import { Card, TribeName, KingdomColor, KingdomName, Kingdom, FullGameState, PlayerState, ClientGameState, ClientPlayerState } from './types.js'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -157,9 +157,24 @@ export function initGame(partial: Pick<FullGameState, 'id' | 'totalAges' | 'play
   return beginAge(base)
 }
 
+// ─── Tiebreaker helpers ───────────────────────────────────────────────────────
+
+export function totalMarkers(player: PlayerState, kingdoms: Kingdom[]): number {
+  return kingdoms.reduce((sum, k) => sum + (k.markers[player.id] ?? 0), 0)
+}
+
+export function lastAgeBandSizes(player: PlayerState): number[] {
+  return player.bands.map(b => b.cards.length).sort((a, b) => b - a)
+}
+
 // ─── Client-safe view ─────────────────────────────────────────────────────────
 
 export function toClientState(state: FullGameState): ClientGameState {
-  const { deck, ...rest } = state
-  return { ...rest, deckSize: deck.length }
+  const { deck, players, ...rest } = state
+  const clientPlayers: ClientPlayerState[] = players.map(p => ({
+    ...p,
+    totalMarkers: totalMarkers(p, state.kingdoms),
+    lastAgeBandSizes: lastAgeBandSizes(p),
+  }))
+  return { ...rest, players: clientPlayers, deckSize: deck.length }
 }
