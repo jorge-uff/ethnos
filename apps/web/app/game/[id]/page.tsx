@@ -8,6 +8,32 @@ import { getSession } from '@/lib/auth'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface AgeKingdomPlacement {
+  playerId: string
+  username: string
+  markers: number
+  reward: number
+}
+
+interface AgeKingdomResult {
+  kingdomColor: string
+  placements: AgeKingdomPlacement[]
+}
+
+interface AgePlayerScore {
+  playerId: string
+  username: string
+  gloryFromKingdoms: number
+  gloryFromBands: number
+  totalGlory: number
+}
+
+interface AgeEndedPayload {
+  age: number
+  kingdomResults: AgeKingdomResult[]
+  playerScores: AgePlayerScore[]
+}
+
 interface Card {
   id: number
   type: 'ALLY' | 'DRAGON'
@@ -365,6 +391,84 @@ function FinishedScreen({ game }: { game: GameState }) {
   )
 }
 
+// ─── Age transition screen ────────────────────────────────────────────────────
+
+function AgeTransitionScreen({ payload }: { payload: AgeEndedPayload }) {
+  const [secondsLeft, setSecondsLeft] = useState(8)
+
+  useEffect(() => {
+    const timer = setInterval(() => setSecondsLeft(s => Math.max(0, s - 1)), 1000)
+    return () => clearInterval(timer)
+  }, [])
+
+  const sorted = [...payload.playerScores].sort((a, b) => b.totalGlory - a.totalGlory)
+
+  return (
+    <div className="fixed inset-0 bg-gray-950/95 flex items-start justify-center z-40 overflow-y-auto">
+      <div className="max-w-2xl w-full mx-auto px-6 py-12 flex flex-col gap-8">
+
+        <div className="text-center">
+          <h2 className="text-3xl font-bold mb-2">Era {payload.age} encerrada</h2>
+          <p className="text-gray-400 text-sm">Próxima era em {secondsLeft}s...</p>
+        </div>
+
+        {payload.kingdomResults.length > 0 && (
+          <div className="bg-gray-900 rounded-xl p-5">
+            <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Pontuação de reinos</p>
+            <div className="flex flex-col gap-5">
+              {payload.kingdomResults.map(kr => (
+                <div key={kr.kingdomColor}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className={`w-3 h-3 rounded-full ${CARD_BG[kr.kingdomColor]}`} />
+                    <span className="text-sm font-medium">{KINGDOM_LABELS[kr.kingdomColor]}</span>
+                  </div>
+                  <div className="flex flex-col gap-1.5 pl-5">
+                    {kr.placements.map((pl, i) => (
+                      <div key={pl.playerId} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2 text-gray-300">
+                          <span className="text-gray-500 w-5 tabular-nums">{i + 1}º</span>
+                          <span>{pl.username}</span>
+                          <span className="text-gray-600 text-xs">({pl.markers} marcadores)</span>
+                        </div>
+                        <span className="text-yellow-400 font-semibold">+{pl.reward} ✨</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="bg-gray-900 rounded-xl p-5">
+          <p className="text-xs text-gray-500 uppercase tracking-widest mb-4">Placar acumulado</p>
+          <div className="flex flex-col gap-4">
+            {sorted.map((ps, i) => (
+              <div key={ps.playerId} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="w-6 h-6 rounded-full bg-indigo-700 flex items-center justify-center text-xs font-bold shrink-0">
+                    {i + 1}
+                  </span>
+                  <span className="font-medium">{ps.username}</span>
+                </div>
+                <div className="text-right text-sm text-gray-400 leading-tight">
+                  <div>
+                    Reinos <span className="text-amber-200/90 tabular-nums">+{ps.gloryFromKingdoms}</span>
+                    <span className="mx-1.5 text-gray-600">·</span>
+                    Bandos <span className="text-amber-200/90 tabular-nums">+{ps.gloryFromBands}</span>
+                  </div>
+                  <div className="text-yellow-400 font-bold text-lg tabular-nums">{ps.totalGlory} ✨</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
 // ─── Game board ───────────────────────────────────────────────────────────────
 
 function GameBoard({
@@ -611,6 +715,7 @@ export default function GamePage() {
   const [myPlayer, setMyPlayer] = useState<Player | undefined>(undefined)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [error, setError] = useState('')
+  const [ageTransition, setAgeTransition] = useState<AgeEndedPayload | null>(null)
 
   const fetchGame = useCallback(async () => {
     try {
@@ -629,7 +734,8 @@ export default function GamePage() {
 
     const s = io(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
     s.emit('game:join', gameId)
-    s.on('game:state', (state: GameState) => setGame(state))
+    s.on('game:state', (state: GameState) => { setGame(state); setAgeTransition(null) })
+    s.on('game:age-ended', (payload: AgeEndedPayload) => setAgeTransition(payload))
     setSocket(s)
 
     return () => { s.disconnect() }
@@ -710,6 +816,8 @@ export default function GamePage() {
           />
         )}
       </div>
+
+      {ageTransition && <AgeTransitionScreen payload={ageTransition} />}
     </main>
   )
 }
