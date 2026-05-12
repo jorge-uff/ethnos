@@ -1,13 +1,20 @@
 import { FullGameState, Card, KingdomColor, Band } from './types.js'
 import { beginAge } from './setup.js'
+<<<<<<< HEAD
 import { applyLeaderPower, routeOrcDiscard } from './tribePowers.js'
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 
 // ─── Action types ─────────────────────────────────────────────────────────────
 
 export type GameAction =
   | { type: 'RECRUIT_FROM_DECK' }
   | { type: 'RECRUIT_FROM_MARKET'; cardId: number }
+<<<<<<< HEAD
   | { type: 'PLAY_BAND'; cardIds: number[]; leaderId: number; kingdomColor?: string; wingfolkKingdomColor?: string }
+=======
+  | { type: 'PLAY_BAND'; cardIds: number[]; leaderId: number; kingdomColor?: string }
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 
 export interface AgeKingdomPlacement {
   playerId: string
@@ -165,6 +172,7 @@ function recruitFromMarket(state: FullGameState, playerId: string, cardId: numbe
   return { state: { ...state, market, players, activePlayerId: nextActivePlayer(state) } }
 }
 
+<<<<<<< HEAD
 function isValidBand(cards: Card[]): boolean {
   if (cards.length === 0) return false
   const nonHalflings = cards.filter(c => c.tribe !== 'HALFLINGS')
@@ -177,13 +185,18 @@ function isValidBand(cards: Card[]): boolean {
   return allSameTribe || allSameColor
 }
 
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 function playBand(
   state: FullGameState,
   playerId: string,
   cardIds: number[],
   leaderId: number,
   kingdomColorInput?: string,
+<<<<<<< HEAD
   wingfolkKingdomColor?: string,
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 ): ActionResult {
   if (cardIds.length === 0) return { state, error: 'Band must have at least 1 card' }
 
@@ -194,6 +207,7 @@ function playBand(
   const leader = bandCards.find(c => c.id === leaderId)
   if (!leader) return { state, error: 'Leader must be in the band' }
 
+<<<<<<< HEAD
   if (!isValidBand(bandCards)) {
     return { state, error: 'Band must be all same tribe or all same color' }
   }
@@ -221,6 +235,31 @@ function playBand(
       ...k,
       markers: { ...k.markers, [playerId]: (k.markers[playerId] ?? 0) + markerAmount },
     }
+=======
+  // Validate: all same tribe OR all same color (ignoring null values)
+  const tribeSet = new Set(bandCards.map(c => c.tribe).filter(Boolean))
+  const colorSet = new Set(bandCards.map(c => c.color).filter(Boolean))
+  const allSameTribe = tribeSet.size === 1 && bandCards.every(c => c.tribe)
+  const allSameColor = colorSet.size === 1 && bandCards.every(c => c.color)
+
+  if (!allSameTribe && !allSameColor) {
+    return { state, error: 'Band must be all same tribe or all same color' }
+  }
+
+  // Determine kingdom
+  let targetKingdomColor: KingdomColor | null = null
+  if (allSameColor) {
+    targetKingdomColor = [...colorSet][0] as KingdomColor
+  } else {
+    // Same tribe: kingdom is leader's color
+    targetKingdomColor = (kingdomColorInput as KingdomColor) ?? leader.color
+  }
+
+  // Place markers
+  const kingdoms = state.kingdoms.map(k => {
+    if (!targetKingdomColor || k.color !== targetKingdomColor) return k
+    return { ...k, markers: { ...k.markers, [playerId]: (k.markers[playerId] ?? 0) + bandCards.length } }
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
   })
 
   const band: Band = {
@@ -230,6 +269,7 @@ function playBand(
     kingdomColor: targetKingdomColor,
   }
 
+<<<<<<< HEAD
   const playedIds = new Set(cardIds)
   const discarded = player.hand.filter(c => !playedIds.has(c.id))
   const { market: routedMarket, players: playersWithOrcHorde } = routeOrcDiscard(state, discarded, playerId)
@@ -249,6 +289,18 @@ function playBand(
   return {
     state: applyLeaderPower(nextState, playerId, band, wingfolkKingdomColor),
   }
+=======
+  // Remaining hand → market
+  const playedIds = new Set(cardIds)
+  const discarded = player.hand.filter(c => !playedIds.has(c.id))
+  const market = [...state.market, ...discarded]
+
+  const players = state.players.map(p =>
+    p.id !== playerId ? p : { ...p, hand: [], bands: [...p.bands, band] }
+  )
+
+  return { state: { ...state, players, kingdoms, market, activePlayerId: nextActivePlayer(state) } }
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 }
 
 // ─── Entry point ──────────────────────────────────────────────────────────────

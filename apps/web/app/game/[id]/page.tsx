@@ -67,9 +67,12 @@ interface Player {
   bands: Band[]
   totalMarkers: number
   lastAgeBandSizes: number[]
+<<<<<<< HEAD
   orcHorde: Record<string, number>
   merfolkPosition: number
   trollTokens: number[]
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 }
 
 interface GameState {
@@ -84,10 +87,13 @@ interface GameState {
   activePlayerId: string | null
   dragonsRevealed: number
   deckSize: number
+<<<<<<< HEAD
   giantToken: { heldByPlayerId: string | null; bandSize: number } | null
   orcsInPlay: boolean
   merfolkInPlay: boolean
   trollsInPlay: boolean
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 }
 
 // ─── Color mappings ───────────────────────────────────────────────────────────
@@ -159,6 +165,7 @@ function CardPill({
 
 function isValidBand(cards: Card[]): boolean {
   if (cards.length === 0) return false
+<<<<<<< HEAD
   const nonHalflings = cards.filter(c => c.tribe !== 'HALFLINGS')
   if (nonHalflings.length === 0) return true
 
@@ -166,6 +173,12 @@ function isValidBand(cards: Card[]): boolean {
   const colors = new Set(nonHalflings.map(c => c.color).filter(Boolean))
   const allSameTribe = tribes.size === 1 && nonHalflings.every(c => c.tribe)
   const allSameColor = colors.size === 1 && nonHalflings.every(c => c.color)
+=======
+  const tribes = new Set(cards.map(c => c.tribe).filter(Boolean))
+  const colors = new Set(cards.map(c => c.color).filter(Boolean))
+  const allSameTribe = tribes.size === 1 && cards.every(c => c.tribe)
+  const allSameColor = colors.size === 1 && cards.every(c => c.color)
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
   return allSameTribe || allSameColor
 }
 
@@ -186,11 +199,16 @@ function PlayBandModal({
 }: {
   selected: Card[]
   myPlayer: Player
+<<<<<<< HEAD
   onConfirm: (leaderId: number, kingdomColor: string, specialKingdomColor?: string) => void
+=======
+  onConfirm: (leaderId: number, kingdomColor: string) => void
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
   onCancel: () => void
 }) {
   const [leaderId, setLeaderId] = useState<number>(selected[0]?.id)
   const [kingdom, setKingdom] = useState<string>('')
+<<<<<<< HEAD
   const [specialKingdom, setSpecialKingdom] = useState<string>('')
 
   const leader = selected.find(c => c.id === leaderId)
@@ -210,6 +228,17 @@ function PlayBandModal({
       (autoKingdom || kingdom) &&
       (!needsTrollChoice || specialKingdom)
   )
+=======
+
+  const colors = new Set(selected.map(c => c.color).filter(Boolean))
+  const allSameColor = colors.size === 1 && selected.every(c => c.color)
+  const autoKingdom = allSameColor ? [...colors][0] as string : null
+
+  // When leader changes, auto-set kingdom if same-color band
+  const effectiveKingdom = autoKingdom ?? kingdom
+
+  const canSubmit = leaderId && (autoKingdom || kingdom)
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
@@ -265,6 +294,7 @@ function PlayBandModal({
           )}
         </div>
 
+<<<<<<< HEAD
         {needsTrollChoice && (
           <div className="mb-6">
             <p className="text-xs text-gray-500 uppercase tracking-widest mb-2">Troll token kingdom</p>
@@ -287,6 +317,11 @@ function PlayBandModal({
         <div className="flex gap-3">
           <button
             onClick={() => canSubmit && onConfirm(leaderId, effectiveKingdom, specialKingdom)}
+=======
+        <div className="flex gap-3">
+          <button
+            onClick={() => canSubmit && onConfirm(leaderId, effectiveKingdom)}
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
             disabled={!canSubmit}
             className="flex-1 py-2.5 bg-green-600 hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl font-semibold transition-colors"
           >
@@ -554,17 +589,24 @@ function GameBoard({
   return (
     <div className="flex flex-col gap-5">
       {/* Header */}
+<<<<<<< HEAD
       <div className="flex flex-col gap-2 bg-gray-900 rounded-xl px-6 py-4">
+=======
+      <div className="flex items-center justify-between bg-gray-900 rounded-xl px-6 py-4">
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
         <div className="flex gap-6 text-sm">
           <span className="text-gray-400">Age <span className="text-white font-bold">{game.age}</span> / {game.totalAges}</span>
           <span className="text-gray-400">Dragons <span className="text-red-400 font-bold">{game.dragonsRevealed}</span> / 3</span>
           <span className="text-gray-400">Deck <span className="text-white font-bold">{game.deckSize}</span></span>
         </div>
+<<<<<<< HEAD
         {game.giantToken?.heldByPlayerId && (
           <div className="text-xs text-amber-200">
             Giant token held by {game.players.find(p => p.id === game.giantToken?.heldByPlayerId)?.username ?? 'unknown'} ({game.giantToken.bandSize} cards)
           </div>
         )}
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
         <div className="text-sm">
           {activePlayer && (
             <span className={activePlayer.id === myPlayer?.id ? 'text-green-400 font-bold' : 'text-gray-300'}>
@@ -718,6 +760,7 @@ function GameBoard({
                 <p className="text-xs text-gray-500 mb-3">{p.hand.length} cards in hand</p>
               )}
 
+<<<<<<< HEAD
               {(p.orcHorde && Object.keys(p.orcHorde).length > 0) && (
                 <div className="mb-2 text-xs text-amber-200">
                   Orc Horde: {Object.entries(p.orcHorde).map(([color, amount]) => `${KINGDOM_LABELS[color] ?? color} ${amount}`).join(', ')}
@@ -734,6 +777,8 @@ function GameBoard({
                 </div>
               )}
 
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
               {p.bands.length > 0 && (
                 <div>
                   <p className="text-xs text-gray-500 mb-1">Bands ({p.bands.length})</p>
@@ -753,6 +798,7 @@ function GameBoard({
         <PlayBandModal
           selected={selectedCards}
           myPlayer={myPlayer}
+<<<<<<< HEAD
           onConfirm={(leaderId, kingdomColor, specialKingdomColor) => {
             setShowBandModal(false)
             send({
@@ -762,6 +808,11 @@ function GameBoard({
               kingdomColor,
               wingfolkKingdomColor: specialKingdomColor || undefined,
             })
+=======
+          onConfirm={(leaderId, kingdomColor) => {
+            setShowBandModal(false)
+            send({ type: 'PLAY_BAND', cardIds: [...selectedCardIds], leaderId, kingdomColor })
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
           }}
           onCancel={() => setShowBandModal(false)}
         />

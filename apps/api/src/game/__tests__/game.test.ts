@@ -49,9 +49,12 @@ function makePlayer(id: string, overrides: Partial<PlayerState> = {}): PlayerSta
     gloryFromBands: 0,
     hand: [],
     bands: [],
+<<<<<<< HEAD
     orcHorde: {},
     merfolkPosition: 0,
     trollTokens: [],
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
     ...overrides,
   }
 }
@@ -429,6 +432,7 @@ describe('playBand (PLAY_BAND)', () => {
     expect(result.error).toBeTruthy()
   })
 
+<<<<<<< HEAD
   it('aceita bando com Halflings misturados com mesma cor', () => {
     const c1 = ally('HALFLINGS', 'ORANGE')
     const c2 = ally('ELVES', 'ORANGE')
@@ -493,6 +497,8 @@ describe('playBand (PLAY_BAND)', () => {
     expect(result.state.market).not.toContainEqual(p1Discard)
   })
 
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
   it('aceita bando de 1 carta', () => {
     const c1 = ally('CENTAURS', 'ORANGE')
     const players = [makePlayer('p1', { hand: [c1] }), makePlayer('p2')]

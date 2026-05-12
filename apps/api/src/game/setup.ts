@@ -136,6 +136,7 @@ export function beginAge(state: FullGameState): FullGameState {
     activePlayerId = sorted[0].id
   }
 
+<<<<<<< HEAD
   return {
     ...state,
     deck,
@@ -147,6 +148,9 @@ export function beginAge(state: FullGameState): FullGameState {
     merfolkInPlay: state.activeTribes.includes('MERFOLK'),
     trollsInPlay: state.activeTribes.includes('TROLLS'),
   }
+=======
+  return { ...state, deck, market, players, activePlayerId, dragonsRevealed: 0 }
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 }
 
 // ─── Full game init ───────────────────────────────────────────────────────────
@@ -164,11 +168,14 @@ export function initGame(partial: Pick<FullGameState, 'id' | 'totalAges' | 'play
     deck,
     market: [],
     kingdoms,
+<<<<<<< HEAD
     giantToken: null,
     orcsInPlay: tribes.includes('ORCS'),
     merfolkInPlay: tribes.includes('MERFOLK'),
     trollsInPlay: tribes.includes('TROLLS'),
     players: partial.players,
+=======
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
     activePlayerId: null,
     dragonsRevealed: 0,
   }
@@ -195,6 +202,7 @@ export function toClientState(state: FullGameState): ClientGameState {
     totalMarkers: totalMarkers(p, state.kingdoms),
     lastAgeBandSizes: lastAgeBandSizes(p),
   }))
+<<<<<<< HEAD
   return {
     ...rest,
     players: clientPlayers,
@@ -204,4 +212,7 @@ export function toClientState(state: FullGameState): ClientGameState {
     trollsInPlay: rest.activeTribes.includes('TROLLS'),
     giantToken: rest.giantToken ?? null,
   }
+=======
+  return { ...rest, players: clientPlayers, deckSize: deck.length }
+>>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 }
