@@ -49,6 +49,9 @@ function makePlayer(id: string, overrides: Partial<PlayerState> = {}): PlayerSta
     gloryFromBands: 0,
     hand: [],
     bands: [],
+    merfolkPosition: 0,
+    orcHorde: 0,
+    trollTokens: 0,
     ...overrides,
   }
 }
@@ -88,6 +91,8 @@ function makeState(overrides: Partial<FullGameState> = {}): FullGameState {
     players,
     activePlayerId: players[0].id,
     dragonsRevealed: 0,
+    giantToken: null,
+    orcPowerPlayerId: null,
     ...overrides,
   }
 }

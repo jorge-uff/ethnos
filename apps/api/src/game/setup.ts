@@ -156,6 +156,14 @@ export function initGame(partial: Pick<FullGameState, 'id' | 'totalAges' | 'play
     kingdoms,
     activePlayerId: null,
     dragonsRevealed: 0,
+    giantToken: null,
+    orcPowerPlayerId: null,
+    players: partial.players.map(p => ({
+      ...p,
+      merfolkPosition: 0,
+      orcHorde: 0,
+      trollTokens: 0,
+    })),
   }
 
   return beginAge(base)
