@@ -99,8 +99,10 @@ export function setupKingdoms(players: PlayerState[]): Kingdom[] {
 // ─── Begin an age ─────────────────────────────────────────────────────────────
 
 export function beginAge(state: FullGameState): FullGameState {
+  const discarded = state.players.flatMap(p => p.hand)
+  let market = [...state.market, ...discarded]
   let deck = [...state.deck]
-  const players = state.players.map(p => ({ ...p, hand: [...p.hand], bands: [] }))
+  const players: PlayerState[] = state.players.map(p => ({ ...p, hand: [], bands: [] }))
   const marketSize = state.players.length * 2
 
   // Each player draws 1 card
@@ -110,7 +112,9 @@ export function beginAge(state: FullGameState): FullGameState {
   }
 
   // Set up market
-  const market = deck.splice(0, marketSize)
+  if (market.length < marketSize) {
+    market = [...market, ...deck.splice(0, marketSize - market.length)]
+  }
 
   // Shuffle dragons into the bottom half for this age
   const dragons: Card[] = [
