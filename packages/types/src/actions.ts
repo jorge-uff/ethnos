@@ -22,11 +22,7 @@ export interface IPlayBandAction {
   leaderId: number        // which card is the leader
   // where to place the control marker (null = don't place one)
   kingdomColor: KingdomColor | null
-<<<<<<< HEAD
-  // Wingfolk: can override kingdom color or Minotaur free placement
-=======
   // Wingfolk: can override kingdom color
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
   wingfolkKingdomColor?: KingdomColor
 }
 

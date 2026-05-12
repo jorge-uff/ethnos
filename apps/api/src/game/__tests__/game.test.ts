@@ -49,12 +49,6 @@ function makePlayer(id: string, overrides: Partial<PlayerState> = {}): PlayerSta
     gloryFromBands: 0,
     hand: [],
     bands: [],
-<<<<<<< HEAD
-    orcHorde: {},
-    merfolkPosition: 0,
-    trollTokens: [],
-=======
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
     ...overrides,
   }
 }
@@ -432,73 +426,6 @@ describe('playBand (PLAY_BAND)', () => {
     expect(result.error).toBeTruthy()
   })
 
-<<<<<<< HEAD
-  it('aceita bando com Halflings misturados com mesma cor', () => {
-    const c1 = ally('HALFLINGS', 'ORANGE')
-    const c2 = ally('ELVES', 'ORANGE')
-    const players = [makePlayer('p1', { hand: [c1, c2] }), makePlayer('p2')]
-    const state = makeState({ players })
-    const result = applyAction(state, 'u-p1', {
-      type: 'PLAY_BAND', cardIds: [c1.id, c2.id], leaderId: c2.id,
-    })
-    expect(result.error).toBeUndefined()
-  })
-
-  it('Minotaur leader can choose any kingdom for markers', () => {
-    const c1 = ally('MINOTAURS', 'BLUE')
-    const c2 = ally('MINOTAURS', 'GREEN')
-    const players = [makePlayer('p1', { hand: [c1, c2] }), makePlayer('p2')]
-    const state = makeState({ players })
-    const result = applyAction(state, 'u-p1', {
-      type: 'PLAY_BAND', cardIds: [c1.id, c2.id], leaderId: c1.id, kingdomColor: 'RED',
-    })
-    expect(result.error).toBeUndefined()
-    expect(result.state.kingdoms.find(k => k.color === 'RED')!.markers['p1']).toBe(2)
-  })
-
-  it('Wingfolk monotribo can place markers in any kingdom', () => {
-    const c1 = ally('WINGFOLK', 'BLUE')
-    const c2 = ally('WINGFOLK', 'GREEN')
-    const players = [makePlayer('p1', { hand: [c1, c2] }), makePlayer('p2')]
-    const state = makeState({ players })
-    const result = applyAction(state, 'u-p1', {
-      type: 'PLAY_BAND', cardIds: [c1.id, c2.id], leaderId: c1.id, kingdomColor: 'GRAY',
-    })
-    expect(result.error).toBeUndefined()
-    expect(result.state.kingdoms.find(k => k.color === 'GRAY')!.markers['p1']).toBe(2)
-  })
-
-  it('duplica marcadores para bandos de Esqueletos', () => {
-    const c1 = ally('SKELETONS', 'RED')
-    const c2 = ally('SKELETONS', 'RED')
-    const players = [makePlayer('p1', { hand: [c1, c2] }), makePlayer('p2')]
-    const state = makeState({ players })
-    const result = applyAction(state, 'u-p1', {
-      type: 'PLAY_BAND', cardIds: [c1.id, c2.id], leaderId: c1.id,
-    })
-    const redKingdom = result.state.kingdoms.find(k => k.color === 'RED')!
-    expect(redKingdom.markers['p1']).toBe(4)
-  })
-
-  it('envia Orcs descartados para o Orc Horde do jogador com líder Orc', () => {
-    const orcLeader = ally('ORCS', 'ORANGE')
-    const p1Discard = ally('ORCS', 'BLUE')
-    const p1Band = ally('CENTAURS', 'BLUE')
-    const players = [
-      makePlayer('p1', { hand: [p1Discard, p1Band] }),
-      makePlayer('p2', { bands: [{ id: 'b0', cards: [orcLeader], leaderId: orcLeader.id, kingdomColor: 'ORANGE' }]}),
-    ]
-    const state = makeState({ players })
-    const result = applyAction(state, 'u-p1', {
-      type: 'PLAY_BAND', cardIds: [p1Band.id], leaderId: p1Band.id,
-    })
-    const p2 = result.state.players.find(p => p.id === 'p2')!
-    expect(p2.orcHorde['BLUE']).toBe(1)
-    expect(result.state.market).not.toContainEqual(p1Discard)
-  })
-
-=======
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
   it('aceita bando de 1 carta', () => {
     const c1 = ally('CENTAURS', 'ORANGE')
     const players = [makePlayer('p1', { hand: [c1] }), makePlayer('p2')]

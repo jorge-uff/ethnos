@@ -74,11 +74,6 @@ export default async function lobbyRoutes(app: FastifyInstance) {
             handState: [],
             bandsState: [],
             orcHorde: {},
-<<<<<<< HEAD
-            merfolkPosition: 0,
-            trollTokens: [],
-=======
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
           },
         },
       },
@@ -133,11 +128,6 @@ export default async function lobbyRoutes(app: FastifyInstance) {
             handState: [],
             bandsState: [],
             orcHorde: {},
-<<<<<<< HEAD
-            merfolkPosition: 0,
-            trollTokens: [],
-=======
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
           },
         },
       },

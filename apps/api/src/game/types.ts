@@ -29,14 +29,6 @@ export interface Kingdom {
   markers: Record<string, number>
 }
 
-<<<<<<< HEAD
-export interface IGiantToken {
-  heldByPlayerId: string | null
-  bandSize: number
-}
-
-=======
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 export interface Band {
   id: string
   cards: Card[]
@@ -54,12 +46,6 @@ export interface PlayerState {
   gloryFromBands: number
   hand: Card[]
   bands: Band[]
-<<<<<<< HEAD
-  orcHorde: Partial<Record<KingdomColor, number>>
-  merfolkPosition: number
-  trollTokens: number[]
-=======
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
 }
 
 export interface FullGameState {
@@ -71,13 +57,6 @@ export interface FullGameState {
   deck: Card[]          // hidden from clients
   market: Card[]
   kingdoms: Kingdom[]
-<<<<<<< HEAD
-  giantToken: IGiantToken | null
-  orcsInPlay: boolean
-  merfolkInPlay: boolean
-  trollsInPlay: boolean
-=======
->>>>>>> a9845801fc65991191c9a005b225be4f685d6715
   players: PlayerState[]
   activePlayerId: string | null
   dragonsRevealed: number
