@@ -8,9 +8,28 @@ export type GameAction =
   | { type: 'RECRUIT_FROM_MARKET'; cardId: number }
   | { type: 'PLAY_BAND'; cardIds: number[]; leaderId: number; kingdomColor?: string }
 
+export interface AgeKingdomPlacement {
+  playerId: string
+  markers: number
+  reward: number
+}
+
+export interface AgeKingdomResult {
+  kingdomColor: string
+  placements: AgeKingdomPlacement[]
+}
+
+export interface AgeScoring {
+  age: number
+  kingdomResults: AgeKingdomResult[]
+  bandGloryPerPlayer: Record<string, number>  // playerId → glory earned from bands this age
+}
+
+// state = scoredState (before beginAge) for age transitions; nextState = state after beginAge
 type ActionResult =
-  | { state: FullGameState; error?: never }
-  | { state: FullGameState; error: string }
+  | { state: FullGameState; error?: never; ageTransition?: never }
+  | { state: FullGameState; error: string; ageTransition?: never }
+  | { state: FullGameState; nextState: FullGameState; ageTransition: AgeScoring; error?: never }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
 
@@ -25,9 +44,11 @@ function triangularBandGlory(cardCount: number): number {
 
 // ─── Age scoring + transition ─────────────────────────────────────────────────
 
-function endAge(state: FullGameState): FullGameState {
+function endAge(state: FullGameState): ActionResult {
   const ageKey = `age${state.age}` as 'age1' | 'age2' | 'age3'
   let players = state.players.map(p => ({ ...p }))
+
+  const kingdomResults: AgeKingdomResult[] = []
 
   for (const kingdom of state.kingdoms) {
     const rewards = kingdom.tokens[ageKey] as number[]
@@ -37,6 +58,7 @@ function endAge(state: FullGameState): FullGameState {
       (a, b) => (kingdom.markers[b.id] ?? 0) - (kingdom.markers[a.id] ?? 0)
     )
 
+    const placements: AgeKingdomPlacement[] = []
     let posIdx = 0
     while (posIdx < rewards.length) {
       const markerCount = kingdom.markers[ranked[posIdx]?.id] ?? 0
@@ -48,6 +70,7 @@ function endAge(state: FullGameState): FullGameState {
       )
       const reward = rewards[posIdx]
       for (const p of tied) {
+        placements.push({ playerId: p.id, markers: markerCount, reward })
         const idx = players.findIndex(x => x.id === p.id)
         players[idx] = {
           ...players[idx],
@@ -57,13 +80,19 @@ function endAge(state: FullGameState): FullGameState {
       }
       posIdx += tied.length
     }
+
+    if (placements.length > 0) {
+      kingdomResults.push({ kingdomColor: kingdom.color, placements })
+    }
   }
 
+  const bandGloryPerPlayer: Record<string, number> = {}
   players = players.map(p => {
     let bandGlory = 0
     for (const band of p.bands) {
       bandGlory += triangularBandGlory(band.cards.length)
     }
+    bandGloryPerPlayer[p.id] = bandGlory
     if (bandGlory === 0) return p
     return {
       ...p,
@@ -76,16 +105,24 @@ function endAge(state: FullGameState): FullGameState {
   if (nextAge > state.totalAges) {
     // Keep markers and bands intact so the FinishedScreen can apply the
     // official tiebreaker cascade (glory → total markers → largest band → next).
-    return { ...state, players, status: 'FINISHED', activePlayerId: null }
+    return { state: { ...state, players, status: 'FINISHED', activePlayerId: null } }
   }
 
-  // Reset markers for the next age
+  // scoredState: scoring applied but age not yet incremented (sent to REST caller)
+  const scoredState: FullGameState = { ...state, players }
+
+  // Reset markers and begin the next age
   const kingdoms = state.kingdoms.map(k => ({
     ...k,
     markers: Object.fromEntries(players.map(p => [p.id, 0])),
   }))
+  const nextState = beginAge({ ...state, players, kingdoms, age: nextAge, dragonsRevealed: 0 })
 
-  return beginAge({ ...state, players, kingdoms, age: nextAge, dragonsRevealed: 0 })
+  return {
+    state: scoredState,
+    nextState,
+    ageTransition: { age: state.age, kingdomResults, bandGloryPerPlayer },
+  }
 }
 
 // ─── Individual actions ───────────────────────────────────────────────────────
@@ -100,7 +137,7 @@ function recruitFromDeck(state: FullGameState, playerId: string): ActionResult {
 
   if (card.type === 'DRAGON') {
     next = { ...next, market: [...next.market, card], dragonsRevealed: next.dragonsRevealed + 1 }
-    if (next.dragonsRevealed >= 3) return { state: endAge(next) }
+    if (next.dragonsRevealed >= 3) return endAge(next)
     return { state: { ...next, activePlayerId: nextActivePlayer(next) } }
   }
 
