@@ -32,5 +32,8 @@ jobs:
       - name: Type-check
         run: pnpm type-check
 
+      - name: Test
+        run: pnpm --filter api test
+
       - name: Build
         run: pnpm build

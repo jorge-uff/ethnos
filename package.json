@@ -8,6 +8,7 @@
     "type-check": "turbo type-check",
     "db:generate": "pnpm --filter api db:generate",
     "db:migrate": "pnpm --filter api db:migrate",
+    "test": "turbo test",
     "db:studio": "pnpm --filter api db:studio"
   },
   "packageManager": "pnpm@10.33.0",
