@@ -102,7 +102,7 @@ export function beginAge(state: FullGameState): FullGameState {
   const discarded = state.players.flatMap(p => p.hand)
   let market = [...state.market, ...discarded]
   let deck = [...state.deck]
-  const players = state.players.map(p => ({ ...p, hand: [], bands: [] }))
+  const players: PlayerState[] = state.players.map(p => ({ ...p, hand: [], bands: [] }))
   const marketSize = state.players.length * 2
 
   // Each player draws 1 card
