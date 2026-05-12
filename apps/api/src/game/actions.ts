@@ -1,12 +1,21 @@
 import { FullGameState, Card, KingdomColor, Band } from './types.js'
 import { beginAge } from './setup.js'
+import { applyLeaderPower } from './tribePowers.js'
 
 // ─── Action types ─────────────────────────────────────────────────────────────
 
 export type GameAction =
   | { type: 'RECRUIT_FROM_DECK' }
   | { type: 'RECRUIT_FROM_MARKET'; cardId: number }
-  | { type: 'PLAY_BAND'; cardIds: number[]; leaderId: number; kingdomColor?: string }
+  | {
+      type: 'PLAY_BAND'
+      cardIds: number[]
+      leaderId: number
+      kingdomColor?: string
+      // Optional power overrides
+      powerKingdomColor?: string   // free kingdom choice for Minotaurs / monotribe Wingfolk
+      trollKingdomColor?: string   // kingdom for Troll token placement (unused server-side, accepted for future UI)
+    }
 
 export interface AgeKingdomPlacement {
   playerId: string
@@ -22,7 +31,7 @@ export interface AgeKingdomResult {
 export interface AgeScoring {
   age: number
   kingdomResults: AgeKingdomResult[]
-  bandGloryPerPlayer: Record<string, number>  // playerId → glory earned from bands this age
+  bandGloryPerPlayer: Record<string, number>  // playerId → glory earned from bands + tribe powers this age
 }
 
 // state = scoredState (before beginAge) for age transitions; nextState = state after beginAge
@@ -42,6 +51,21 @@ function triangularBandGlory(cardCount: number): number {
   return (cardCount * (cardCount + 1)) / 2
 }
 
+/**
+ * Validates a band with Halflings-aware logic.
+ * Halflings are wildcards: valid if all non-Halfling cards share the same tribe or same color.
+ */
+function bandIsValid(cards: Card[]): boolean {
+  if (cards.length === 0) return false
+  const hasHalflings = cards.some(c => c.tribe === 'HALFLINGS')
+  const check = hasHalflings ? cards.filter(c => c.tribe !== 'HALFLINGS') : cards
+  if (check.length === 0) return true  // all Halflings
+  const tribes = new Set(check.map(c => c.tribe).filter(Boolean))
+  const colors = new Set(check.map(c => c.color).filter(Boolean))
+  return (tribes.size === 1 && check.every(c => c.tribe)) ||
+         (colors.size === 1 && check.every(c => c.color))
+}
+
 // ─── Age scoring + transition ─────────────────────────────────────────────────
 
 function endAge(state: FullGameState): ActionResult {
@@ -53,7 +77,6 @@ function endAge(state: FullGameState): ActionResult {
   for (const kingdom of state.kingdoms) {
     const rewards = kingdom.tokens[ageKey] as number[]
 
-    // Sort players by marker count descending
     const ranked = [...players].sort(
       (a, b) => (kingdom.markers[b.id] ?? 0) - (kingdom.markers[a.id] ?? 0)
     )
@@ -64,7 +87,6 @@ function endAge(state: FullGameState): ActionResult {
       const markerCount = kingdom.markers[ranked[posIdx]?.id] ?? 0
       if (markerCount === 0) break
 
-      // All players tied at this position share the same reward without splitting
       const tied = ranked.filter(
         (_, i) => i >= posIdx && (kingdom.markers[ranked[i].id] ?? 0) === markerCount
       )
@@ -87,6 +109,8 @@ function endAge(state: FullGameState): ActionResult {
   }
 
   const bandGloryPerPlayer: Record<string, number> = {}
+
+  // Band glory (triangular formula)
   players = players.map(p => {
     let bandGlory = 0
     for (const band of p.bands) {
@@ -94,24 +118,49 @@ function endAge(state: FullGameState): ActionResult {
     }
     bandGloryPerPlayer[p.id] = bandGlory
     if (bandGlory === 0) return p
-    return {
-      ...p,
-      glory: p.glory + bandGlory,
-      gloryFromBands: p.gloryFromBands + bandGlory,
-    }
+    return { ...p, glory: p.glory + bandGlory, gloryFromBands: p.gloryFromBands + bandGlory }
+  })
+
+  // Merfolk track glory (position = glory earned this era, track persists)
+  players = players.map(p => {
+    if (p.merfolkPosition === 0) return p
+    const g = p.merfolkPosition
+    bandGloryPerPlayer[p.id] = (bandGloryPerPlayer[p.id] ?? 0) + g
+    return { ...p, glory: p.glory + g, gloryFromBands: p.gloryFromBands + g }
+  })
+
+  // Orc Horde glory (count of captured Orc cards), then reset horde
+  players = players.map(p => {
+    if (p.orcHorde === 0) return p
+    const g = p.orcHorde
+    bandGloryPerPlayer[p.id] = (bandGloryPerPlayer[p.id] ?? 0) + g
+    return { ...p, glory: p.glory + g, gloryFromBands: p.gloryFromBands + g, orcHorde: 0 }
   })
 
   const nextAge = state.age + 1
   if (nextAge > state.totalAges) {
-    // Keep markers and bands intact so the FinishedScreen can apply the
-    // official tiebreaker cascade (glory → total markers → largest band → next).
+    // Game-end bonuses
+
+    // Giant token: holder gets +2 glory
+    if (state.giantToken?.heldByPlayerId) {
+      const holderId = state.giantToken.heldByPlayerId
+      players = players.map(p => {
+        if (p.id !== holderId) return p
+        return { ...p, glory: p.glory + 2, gloryFromBands: p.gloryFromBands + 2 }
+      })
+    }
+
+    // Troll tokens: 1 glory per token
+    players = players.map(p => {
+      if (p.trollTokens === 0) return p
+      return { ...p, glory: p.glory + p.trollTokens, gloryFromBands: p.gloryFromBands + p.trollTokens }
+    })
+
     return { state: { ...state, players, status: 'FINISHED', activePlayerId: null } }
   }
 
-  // scoredState: scoring applied but age not yet incremented (sent to REST caller)
   const scoredState: FullGameState = { ...state, players }
 
-  // Reset markers and begin the next age
   const kingdoms = state.kingdoms.map(k => ({
     ...k,
     markers: Object.fromEntries(players.map(p => [p.id, 0])),
@@ -170,6 +219,8 @@ function playBand(
   cardIds: number[],
   leaderId: number,
   kingdomColorInput?: string,
+  powerKingdomColor?: string,
+  _trollKingdomColor?: string,
 ): ActionResult {
   if (cardIds.length === 0) return { state, error: 'Band must have at least 1 card' }
 
@@ -180,29 +231,37 @@ function playBand(
   const leader = bandCards.find(c => c.id === leaderId)
   if (!leader) return { state, error: 'Leader must be in the band' }
 
-  // Validate: all same tribe OR all same color (ignoring null values)
-  const tribeSet = new Set(bandCards.map(c => c.tribe).filter(Boolean))
-  const colorSet = new Set(bandCards.map(c => c.color).filter(Boolean))
-  const allSameTribe = tribeSet.size === 1 && bandCards.every(c => c.tribe)
-  const allSameColor = colorSet.size === 1 && bandCards.every(c => c.color)
-
-  if (!allSameTribe && !allSameColor) {
-    return { state, error: 'Band must be all same tribe or all same color' }
+  if (!bandIsValid(bandCards)) {
+    return { state, error: 'Band must be all same tribe or all same color (Halflings act as wildcards)' }
   }
 
-  // Determine kingdom
+  // Determine target kingdom
+  const leaderTribe = leader.tribe
+  const hasHalflings = bandCards.some(c => c.tribe === 'HALFLINGS')
+  const nonHalflings = hasHalflings ? bandCards.filter(c => c.tribe !== 'HALFLINGS') : bandCards
+  const checkCards = nonHalflings.length > 0 ? nonHalflings : bandCards
+
+  const colorSet = new Set(checkCards.map(c => c.color).filter(Boolean))
+  const allSameColor = colorSet.size === 1 && checkCards.every(c => c.color)
+
+  const isMonotribeWingfolk = leaderTribe === 'WINGFOLK' && bandCards.every(c => c.tribe === 'WINGFOLK')
+
   let targetKingdomColor: KingdomColor | null = null
-  if (allSameColor) {
+  if ((leaderTribe === 'MINOTAURS' || isMonotribeWingfolk) && powerKingdomColor) {
+    // Free kingdom choice granted by Minotaurs / monotribe Wingfolk power
+    targetKingdomColor = powerKingdomColor as KingdomColor
+  } else if (allSameColor) {
     targetKingdomColor = [...colorSet][0] as KingdomColor
   } else {
-    // Same tribe: kingdom is leader's color
     targetKingdomColor = (kingdomColorInput as KingdomColor) ?? leader.color
   }
 
-  // Place markers
+  // Skeletons double the marker count
+  const markerCount = leaderTribe === 'SKELETONS' ? bandCards.length * 2 : bandCards.length
+
   const kingdoms = state.kingdoms.map(k => {
     if (!targetKingdomColor || k.color !== targetKingdomColor) return k
-    return { ...k, markers: { ...k.markers, [playerId]: (k.markers[playerId] ?? 0) + bandCards.length } }
+    return { ...k, markers: { ...k.markers, [playerId]: (k.markers[playerId] ?? 0) + markerCount } }
   })
 
   const band: Band = {
@@ -212,16 +271,42 @@ function playBand(
     kingdomColor: targetKingdomColor,
   }
 
-  // Remaining hand → market
+  // Discard remaining hand — Orc power intercepts Orc cards for active Orc player
   const playedIds = new Set(cardIds)
   const discarded = player.hand.filter(c => !playedIds.has(c.id))
-  const market = [...state.market, ...discarded]
 
-  const players = state.players.map(p =>
-    p.id !== playerId ? p : { ...p, hand: [], bands: [...p.bands, band] }
-  )
+  let market = state.market
+  let playerUpdates: Record<string, Partial<typeof player>> = {}
 
-  return { state: { ...state, players, kingdoms, market, activePlayerId: nextActivePlayer(state) } }
+  const orcPlayerId = state.orcPowerPlayerId
+  if (orcPlayerId && orcPlayerId !== playerId) {
+    const orcDiscards = discarded.filter(c => c.tribe === 'ORCS')
+    const regularDiscards = discarded.filter(c => c.tribe !== 'ORCS')
+    market = [...state.market, ...regularDiscards]
+    if (orcDiscards.length > 0) {
+      playerUpdates[orcPlayerId] = { orcHorde: (state.players.find(p => p.id === orcPlayerId)?.orcHorde ?? 0) + orcDiscards.length }
+    }
+  } else {
+    market = [...state.market, ...discarded]
+  }
+
+  const players = state.players.map(p => {
+    const extra = playerUpdates[p.id] ?? {}
+    if (p.id !== playerId) return { ...p, ...extra }
+    return { ...p, hand: [], bands: [...p.bands, band], ...extra }
+  })
+
+  let nextState: FullGameState = {
+    ...state,
+    players,
+    kingdoms,
+    market,
+    activePlayerId: nextActivePlayer(state),
+  }
+
+  nextState = applyLeaderPower(nextState, { playerId, leaderTribe, bandCards })
+
+  return { state: nextState }
 }
 
 // ─── Entry point ──────────────────────────────────────────────────────────────
@@ -235,6 +320,6 @@ export function applyAction(state: FullGameState, userId: string, action: GameAc
   switch (action.type) {
     case 'RECRUIT_FROM_DECK':    return recruitFromDeck(state, player.id)
     case 'RECRUIT_FROM_MARKET':  return recruitFromMarket(state, player.id, action.cardId)
-    case 'PLAY_BAND':            return playBand(state, player.id, action.cardIds, action.leaderId, action.kingdomColor)
+    case 'PLAY_BAND':            return playBand(state, player.id, action.cardIds, action.leaderId, action.kingdomColor, action.powerKingdomColor, action.trollKingdomColor)
   }
 }

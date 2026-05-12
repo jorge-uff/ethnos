@@ -46,6 +46,15 @@ export interface PlayerState {
   gloryFromBands: number
   hand: Card[]
   bands: Band[]
+  // Tribe power state (persisted in DB)
+  merfolkPosition: number   // 0-6, Merfolk track
+  orcHorde: number          // count of captured Orc cards
+  trollTokens: number       // total troll tokens placed (scored at game end)
+}
+
+export interface GiantTokenState {
+  heldByPlayerId: string
+  bandSize: number
 }
 
 export interface FullGameState {
@@ -60,6 +69,9 @@ export interface FullGameState {
   players: PlayerState[]
   activePlayerId: string | null
   dragonsRevealed: number
+  // Tribe power state (game-level)
+  giantToken: GiantTokenState | null  // null if Giants not in play or unclaimed
+  orcPowerPlayerId: string | null     // player whose Orc power intercepts discards
 }
 
 // Per-player view sent to clients. Adds derived fields used for tiebreakers
