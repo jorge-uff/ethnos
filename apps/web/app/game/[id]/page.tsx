@@ -39,6 +39,8 @@ interface Player {
   gloryFromBands: number
   hand: Card[]
   bands: Band[]
+  totalMarkers: number
+  lastAgeBandSizes: number[]
 }
 
 interface GameState {
@@ -310,26 +312,54 @@ function PlayerGlorySplit({ player, size = 'md' }: { player: Player; size?: 'sm'
 
 // ─── Finished screen ──────────────────────────────────────────────────────────
 
+// Lexicographic comparison of band-size arrays, sorted desc:
+// the player with the larger biggest band wins; ties fall to the 2nd biggest, etc.
+function compareLastAgeBands(a: number[], b: number[]): number {
+  const len = Math.max(a.length, b.length)
+  for (let i = 0; i < len; i++) {
+    const diff = (b[i] ?? 0) - (a[i] ?? 0)
+    if (diff !== 0) return diff
+  }
+  return 0
+}
+
 function FinishedScreen({ game }: { game: GameState }) {
-  const sorted = [...game.players].sort((a, b) => b.glory - a.glory)
+  const sorted = [...game.players].sort((a, b) =>
+    b.glory - a.glory ||
+    b.totalMarkers - a.totalMarkers ||
+    compareLastAgeBands(a.lastAgeBandSizes, b.lastAgeBandSizes)
+  )
   return (
     <div className="flex flex-col items-center gap-8 py-16">
       <h2 className="text-2xl font-semibold">Game Over</h2>
       <div className="bg-gray-900 rounded-xl p-6 w-full max-w-md">
         <ul className="flex flex-col gap-4">
-          {sorted.map((p, i) => (
-            <li key={p.id} className="flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="w-7 h-7 shrink-0 rounded-full bg-indigo-700 flex items-center justify-center text-sm font-bold">
-                  {i + 1}
-                </span>
-                <span className="font-medium truncate">{p.username}</span>
-                {i === 0 && <span className="text-xs text-yellow-400 shrink-0">Winner</span>}
-              </div>
-              <PlayerGlorySplit player={p} size="md" />
-            </li>
-          ))}
+          {sorted.map((p, i) => {
+            const largestBand = p.lastAgeBandSizes[0] ?? 0
+            return (
+              <li key={p.id} className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-7 h-7 shrink-0 rounded-full bg-indigo-700 flex items-center justify-center text-sm font-bold">
+                    {i + 1}
+                  </span>
+                  <span className="font-medium truncate">{p.username}</span>
+                  {i === 0 && <span className="text-xs text-yellow-400 shrink-0">Winner</span>}
+                </div>
+                <div className="text-right">
+                  <PlayerGlorySplit player={p} size="md" />
+                  <div className="text-[11px] text-gray-500 mt-1 leading-tight">
+                    Marcadores <span className="text-gray-300 tabular-nums">{p.totalMarkers}</span>
+                    <span className="mx-1.5 text-gray-700">·</span>
+                    Maior bando <span className="text-gray-300 tabular-nums">{largestBand}</span>
+                  </div>
+                </div>
+              </li>
+            )
+          })}
         </ul>
+        <p className="text-[11px] text-gray-600 mt-4 text-center">
+          Desempate: Glória → marcadores no tabuleiro → maior bando da última Era → próximos bandos
+        </p>
       </div>
     </div>
   )

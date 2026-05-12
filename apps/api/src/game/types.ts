@@ -62,5 +62,15 @@ export interface FullGameState {
   dragonsRevealed: number
 }
 
+// Per-player view sent to clients. Adds derived fields used for tiebreakers
+// in the final ranking (more total markers → larger last-age band → next, etc.)
+export interface ClientPlayerState extends PlayerState {
+  totalMarkers: number
+  lastAgeBandSizes: number[]   // sorted descending
+}
+
 // What gets sent to clients (no deck contents)
-export type ClientGameState = Omit<FullGameState, 'deck'> & { deckSize: number }
+export type ClientGameState = Omit<FullGameState, 'deck' | 'players'> & {
+  deckSize: number
+  players: ClientPlayerState[]
+}

@@ -72,16 +72,18 @@ function endAge(state: FullGameState): FullGameState {
     }
   })
 
-  // Reset markers
+  const nextAge = state.age + 1
+  if (nextAge > state.totalAges) {
+    // Keep markers and bands intact so the FinishedScreen can apply the
+    // official tiebreaker cascade (glory → total markers → largest band → next).
+    return { ...state, players, status: 'FINISHED', activePlayerId: null }
+  }
+
+  // Reset markers for the next age
   const kingdoms = state.kingdoms.map(k => ({
     ...k,
     markers: Object.fromEntries(players.map(p => [p.id, 0])),
   }))
-
-  const nextAge = state.age + 1
-  if (nextAge > state.totalAges) {
-    return { ...state, players, kingdoms, status: 'FINISHED', activePlayerId: null }
-  }
 
   return beginAge({ ...state, players, kingdoms, age: nextAge, dragonsRevealed: 0 })
 }
