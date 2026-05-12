@@ -712,7 +712,6 @@ export default function GamePage() {
   const gameId = params.id as string
 
   const [game, setGame] = useState<GameState | null>(null)
-  const [myPlayer, setMyPlayer] = useState<Player | undefined>(undefined)
   const [socket, setSocket] = useState<Socket | null>(null)
   const [error, setError] = useState('')
   const [ageTransition, setAgeTransition] = useState<AgeEndedPayload | null>(null)
@@ -733,21 +732,16 @@ export default function GamePage() {
     fetchGame()
 
     const s = io(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001')
-    s.emit('game:join', gameId)
+    s.on('connect', () => {
+      s.emit('game:join', gameId)
+      fetchGame()
+    })
     s.on('game:state', (state: GameState) => { setGame(state); setAgeTransition(null) })
     s.on('game:age-ended', (payload: AgeEndedPayload) => setAgeTransition(payload))
     setSocket(s)
 
     return () => { s.disconnect() }
   }, [gameId, router, fetchGame])
-
-  useEffect(() => {
-    if (!game) return
-    const session = getSession()
-    if (!session) return
-    const me = game.players.find(p => p.userId === session.user.id || p.username === session.user.username)
-    setMyPlayer(me)
-  }, [game])
 
   async function startGame() {
     try {
@@ -789,6 +783,7 @@ export default function GamePage() {
   }
 
   const session = getSession()
+  const myPlayer = game.players.find(p => p.userId === session?.user.id || p.username === session?.user.username)
   const isCreator = game.players[0]?.username === session?.user.username
   const isMyTurn = !!(myPlayer && game.activePlayerId === myPlayer.id && game.status === 'IN_PROGRESS')
 
