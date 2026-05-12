@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify'
 import { requireAuth } from '../middleware/auth.js'
 import { initGame } from '../game/setup.js'
 import { loadGame, saveGame, broadcastState } from '../game/state.js'
+import { getIo } from '../game/socket.js'
 
 interface JwtUser {
   id: string
@@ -137,6 +138,9 @@ export default async function lobbyRoutes(app: FastifyInstance) {
       },
     })
 
+    const fullState = await loadGame(app.prisma, id)
+    if (fullState) broadcastState(getIo(), fullState)
+
     return reply.send(updated)
   })
 
@@ -168,6 +172,9 @@ export default async function lobbyRoutes(app: FastifyInstance) {
       where: { id },
       include: { players: { include: { user: { select: { username: true } } } } },
     })
+
+    const fullState = await loadGame(app.prisma, id)
+    if (fullState) broadcastState(getIo(), fullState)
 
     return reply.send(updated)
   })
